@@ -8,15 +8,15 @@ class SAM3X8E_EEFC {
 public:
 	SAM3X8E_EEFC(Efc *_efc, int start);
 	void begin();
-	boolean writePage(uint8_t *data, const uint8_t *flash);
-	boolean writeData(uint8_t *data, uint32_t len, const uint8_t *flash);
+	boolean writePage(void *data, const void *flash);
+	boolean writeData(void *data, uint32_t len, const void *flash);
 	boolean getDescriptor(uint32_t *buff, int size);
 
-	uint8_t *getStartAddress() { return start; }
-	uint8_t *getEndAddress() { return start+size; }
+	void *getStartAddress() { return start; }
+	void *getEndAddress() { return start+size; }
 	uint32_t getSize() { return size; }
-	boolean containsAddress(const uint8_t *addr) { return (start<=addr) && (addr<start+size); }
-	boolean isAligned(const uint8_t *addr) { return isAligned(reinterpret_cast<uint32_t>(addr)); }
+	boolean containsAddress(const void *addr) { return (start<=addr) && (addr<start+size); }
+	boolean isAligned(const void *addr) { return isAligned(reinterpret_cast<uint32_t>(addr)); }
 	boolean isAligned(uint32_t addr) { return (addr & 0x03) == 0; }
 
 	enum Commands {

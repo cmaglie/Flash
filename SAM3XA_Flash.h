@@ -9,8 +9,8 @@ public:
 	SAM3XA_Flash(SAM3X8E_EEFC *_eefcs[]) : eefcs(_eefcs) { };
 
 	void begin();
-	boolean writePage(uint8_t *data, uint8_t *flash);
-	boolean writeData(uint8_t *data, uint32_t len, const uint8_t *flash);
+	boolean writePage(void *data, const void *flash);
+	boolean writeData(void *data, uint32_t len, const void *flash);
 
 private:
 	SAM3X8E_EEFC **eefcs;

@@ -7,7 +7,7 @@ void SAM3XA_Flash::begin()
 		eefcs[i]->begin();
 }
 
-boolean SAM3XA_Flash::writePage(uint8_t *data, const uint8_t *flash)
+boolean SAM3XA_Flash::writePage(void *data, const void *flash)
 {
 	for (int i=0; eefcs[i]!=NULL; i++)
 		if (eefcs[i]->containsAddress(flash))
@@ -15,9 +15,10 @@ boolean SAM3XA_Flash::writePage(uint8_t *data, const uint8_t *flash)
 	return false;
 }
 
-boolean SAM3XA_Flash::writeData(uint8_t *data, uint32_t len, const uint8_t *flash)
+boolean SAM3XA_Flash::writeData(void *data, uint32_t len, const void *_flash)
 {
-	uint8_t *end = const_cast<uint8_t *>(flash) + len;
+	const uint8_t *flash = reinterpret_cast<const uint8_t *>(_flash);
+	const uint8_t *end = flash + len;
 
 	while (true) {
 		int i;
@@ -34,7 +35,7 @@ boolean SAM3XA_Flash::writeData(uint8_t *data, uint32_t len, const uint8_t *flas
 			return eefcs[i]->writeData(data, len, flash);
 		}
 
-		uint8_t *stop = eefcs[i]->getEndAddress();
+		uint8_t *stop = reinterpret_cast<uint8_t *>(eefcs[i]->getEndAddress());
 		uint32_t size = stop - flash;
 		boolean res = eefcs[i]->writeData(data, size, flash);
 		if (!res)

@@ -21,8 +21,10 @@ void SAM3X8E_EEFC::begin()
 }
 
 __attribute__ ((long_call, section (".ramfunc")))
-boolean SAM3X8E_EEFC::writePage(uint8_t *data, const uint8_t *flash)
+boolean SAM3X8E_EEFC::writePage(void *data, const void *_flash)
 {
+	const uint8_t *flash = reinterpret_cast<const uint8_t *>(_flash);
+
 	// Range check
 	if (!containsAddress(flash)) {
 		hasInternalError = true;
@@ -45,10 +47,10 @@ boolean SAM3X8E_EEFC::writePage(uint8_t *data, const uint8_t *flash)
 	// Run page write
 	// (page buffering should be done 32bit at a time, otherwise
 	// strange things happens...)
-	uint32_t *_flash = reinterpret_cast<uint32_t *>(const_cast<uint8_t *>(flash));
-	uint32_t *_data  = reinterpret_cast<uint32_t *>(data);
+	uint32_t *flashP = reinterpret_cast<uint32_t *>(const_cast<uint8_t *>(flash));
+	uint32_t *dataP  = reinterpret_cast<uint32_t *>(data);
 	for (int i=0; i<pageSize/4; i++)
-		_flash[i] = _data[i];
+		flashP[i] = dataP[i];
 	__disable_irq();
 	command(ERASE_PAGE_AND_WRITE_PAGE, page);
 	waitReady();
@@ -60,8 +62,10 @@ boolean SAM3X8E_EEFC::writePage(uint8_t *data, const uint8_t *flash)
 }
 
 __attribute__ ((long_call, section (".ramfunc")))
-boolean SAM3X8E_EEFC::writeData(uint8_t *data, uint32_t len, const uint8_t *flash)
+boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 {
+	const uint8_t *flash = reinterpret_cast<const uint8_t *>(_flash);
+
 	// Range check
 	if (!containsAddress(flash)) {
 		hasInternalError = true;
@@ -87,8 +91,8 @@ boolean SAM3X8E_EEFC::writeData(uint8_t *data, uint32_t len, const uint8_t *flas
 	// Run page write
 	// (page buffering should be done 32bit at a time,
 	// otherwise strange things happens...)
-	volatile uint32_t *_flash  = reinterpret_cast<uint32_t *>(start + (startPage * pageSize));
-	volatile uint32_t *_data   = reinterpret_cast<uint32_t *>(data);
+	volatile uint32_t *flashP  = reinterpret_cast<uint32_t *>(start + (startPage * pageSize));
+	volatile uint32_t *dataP   = reinterpret_cast<uint32_t *>(data);
 	for (int page=startPage; page<=endPage; page++)
 	{
 		int start = (page==startPage) ? startOffset/4 : 0;
@@ -96,15 +100,15 @@ boolean SAM3X8E_EEFC::writeData(uint8_t *data, uint32_t len, const uint8_t *flas
 
 		// Buffer pre
 		for (int off=0; off<=start; off++)
-			_flash[off] = _flash[off];
+			flashP[off] = flashP[off];
 		// Buffer post
 		for (int off=end; off<pageSize/4; off++)
-			_flash[off] = _flash[off];
+			flashP[off] = flashP[off];
 		// Copy data over
-		for (int off=start; off<=end; off++, _data++)
-			_flash[off] = *_data;
+		for (int off=start; off<=end; off++, dataP++)
+			flashP[off] = *dataP;
 
-		_flash += pageSize / 4;
+		flashP += pageSize / 4;
 
 		__disable_irq();
 		command(ERASE_PAGE_AND_WRITE_PAGE, page);
