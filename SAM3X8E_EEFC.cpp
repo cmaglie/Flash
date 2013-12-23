@@ -85,7 +85,7 @@ boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 	uint8_t *startFlash  =  const_cast<uint8_t *>(flash);
 	uint32_t startPage   = (flash - start) / pageSize;
 	uint32_t startOffset = (flash - start) % pageSize;
-	uint8_t *endFlash    =  const_cast<uint8_t *>(flash + len - 1);
+	// uint8_t *endFlash    =  const_cast<uint8_t *>(flash + len - 1);
 	uint32_t endPage     = (flash + len - start - 1) / pageSize;
 	uint32_t endOffset   = (flash + len - start - 1) % pageSize;
 
