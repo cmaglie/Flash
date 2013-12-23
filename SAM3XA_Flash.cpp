@@ -1,4 +1,5 @@
 
+#include <Arduino.h>
 #include <SAM3XA_Flash.h>
 
 void SAM3XA_Flash::begin()
@@ -32,6 +33,9 @@ boolean SAM3XA_Flash::writeData(void *data, uint32_t len, const void *_flash)
 
 		if (eefcs[i]->containsAddress(end)) {
   			// Write last block
+			// Serial.println((int)data,HEX);
+			// Serial.println(len);
+			// Serial.println((int)flash,HEX);
 			return eefcs[i]->writeData(data, len, flash);
 		}
 

@@ -1,5 +1,6 @@
 
 #include <SAM3X8E_EEFC.h>
+#include <Arduino.h>
 
 SAM3X8E_EEFC::SAM3X8E_EEFC(Efc *_efc, int _start) :
 	efc(_efc), start(reinterpret_cast<uint8_t *>(_start)), hasInternalError(false)
@@ -84,9 +85,16 @@ boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 	uint8_t *startFlash  =  const_cast<uint8_t *>(flash);
 	uint32_t startPage   = (flash - start) / pageSize;
 	uint32_t startOffset = (flash - start) % pageSize;
-	uint8_t *endFlash    =  const_cast<uint8_t *>(flash + len);
+	uint8_t *endFlash    =  const_cast<uint8_t *>(flash + len - 1);
 	uint32_t endPage     = (flash + len - start - 1) / pageSize;
 	uint32_t endOffset   = (flash + len - start - 1) % pageSize;
+
+	// Serial.print("startFlash ="); Serial.println((int)startFlash,HEX);
+	// Serial.print("startPage  ="); Serial.println(startPage);
+	// Serial.print("startOffset="); Serial.println(startOffset);
+	// Serial.print("  endFlash ="); Serial.println((int)endFlash,HEX);
+	// Serial.print("  endPage  ="); Serial.println(endPage);
+	// Serial.print("  endOffset="); Serial.println(endOffset);
 
 	// Run page write
 	// (page buffering should be done 32bit at a time,
@@ -95,18 +103,32 @@ boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 	volatile uint32_t *dataP   = reinterpret_cast<uint32_t *>(data);
 	for (int page=startPage; page<=endPage; page++)
 	{
+		// Serial.print("Writing page ");
+		// Serial.println(page);
+
 		int start = (page==startPage) ? startOffset/4 : 0;
 		int end   = (page==endPage)   ? endOffset/4   : pageSize/4;
 
 		// Buffer pre
-		for (int off=0; off<=start; off++)
+		for (int off=0; off<=start; off++) {
+			// Serial.print("Pre  BUFF: ");
+			// Serial.println((int)(flashP+off), HEX);
 			flashP[off] = flashP[off];
+		}
 		// Buffer post
-		for (int off=end; off<pageSize/4; off++)
+		for (int off=end; off<pageSize/4; off++) {
+			// Serial.print("Post BUFF: ");
+			// Serial.println((int)(flashP+off), HEX);
 			flashP[off] = flashP[off];
+		}
 		// Copy data over
-		for (int off=start; off<=end; off++, dataP++)
+		for (int off=start; off<=end; off++, dataP++) {
+			// Serial.print("Data     : ");
+			// Serial.print((int)(flashP+off), HEX);
+			// Serial.print(" ");
+			// Serial.println(*dataP, HEX);
 			flashP[off] = *dataP;
+		}
 
 		flashP += pageSize / 4;
 
