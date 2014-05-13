@@ -22,6 +22,7 @@
 #ifndef SAM3X8E_EEFC_INCLUDED
 #define SAM3X8E_EEFC_INCLUDED
 
+
 class SAM3X8E_EEFC {
 public:
 	SAM3X8E_EEFC(Efc *_efc, int start);
