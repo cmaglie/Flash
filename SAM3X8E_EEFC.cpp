@@ -20,6 +20,13 @@
 #include <SAM3X8E_EEFC.h>
 #include <Arduino.h>
 
+
+
+
+
+
+
+	
 SAM3X8E_EEFC::SAM3X8E_EEFC(Efc *_efc, int _start) :
 	efc(_efc), start(reinterpret_cast<uint8_t *>(_start)), hasInternalError(false)
 {
@@ -33,7 +40,8 @@ void SAM3X8E_EEFC::begin()
 	getDescriptor(buff, 8);
 	size = buff[1];
 	pageSize = buff[2];
-
+	Serial.print ("Page size:");
+	Serial.println(pageSize,HEX);
 	// Set Flash Wait State to 6
 	// (SAM3X bug, see datasheet errata for details)
 	setFlashWaitStates(6);
@@ -89,13 +97,22 @@ boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 	if (!containsAddress(flash)) {
 		hasInternalError = true;
 		internalError = OUT_OF_RANGE_ERROR;
+		Serial.println("OUT_OF_RANGE_ERROR");
+	
 		return false;
 	}
 
+	
 	// 32-bit Align check
 	if (!isAligned(flash) || !isAligned(data) || !isAligned(len)) {
 		hasInternalError = true;
 		internalError = ALIGNMENT_ERROR;
+		Serial.println("ALIGNMENT_ERROR");
+		Serial.println(isAligned(flash));
+		Serial.println(isAligned(data));
+		Serial.println(isAligned(len));
+		
+		
 		return false;
 	}
 
@@ -105,46 +122,58 @@ boolean SAM3X8E_EEFC::writeData(void *data, uint32_t len, const void *_flash)
 	uint32_t startOffset = (flash - start) % pageSize;
 	// uint8_t *endFlash    =  const_cast<uint8_t *>(flash + len - 1);
 	uint32_t endPage     = (flash + len - start - 1) / pageSize;
-	uint32_t endOffset   = (flash + len - start - 1) % pageSize;
-
-	// Serial.print("startFlash ="); Serial.println((int)startFlash,HEX);
-	// Serial.print("startPage  ="); Serial.println(startPage);
-	// Serial.print("startOffset="); Serial.println(startOffset);
+	uint32_t endOffset   = ((flash + len - start - 1) % pageSize) + 1;  // we need to add exra one here affected in [Buffer post]
+	
+	
+	
+	 Serial.print("Start ="); Serial.println((int)start,HEX);
+	 Serial.print("startFlash ="); Serial.println((int)startFlash,HEX);
+	 Serial.print("startPage  ="); Serial.println(startPage,HEX);
+	 Serial.print("startOffset="); Serial.println(startOffset,HEX);
 	// Serial.print("  endFlash ="); Serial.println((int)endFlash,HEX);
-	// Serial.print("  endPage  ="); Serial.println(endPage);
-	// Serial.print("  endOffset="); Serial.println(endOffset);
+	 Serial.print("  endPage  ="); Serial.println(endPage,HEX);
+	 Serial.print("  endOffset="); Serial.println(endOffset,HEX);
 
 	// Run page write
 	// (page buffering should be done 32bit at a time,
 	// otherwise strange things happens...)
 	volatile uint32_t *flashP  = reinterpret_cast<uint32_t *>(start + (startPage * pageSize));
 	volatile uint32_t *dataP   = reinterpret_cast<uint32_t *>(data);
+	
+	
 	for (int page=startPage; page<=endPage; page++)
 	{
-		// Serial.print("Writing page ");
-		// Serial.println(page);
+		 Serial.print("Writing page ");
+		 Serial.println(page);
 
 		int start = (page==startPage) ? startOffset/4 : 0;
-		int end   = (page==endPage)   ? endOffset/4   : pageSize/4;
+		int end   = (page==endPage)   ? (endOffset/4 +1)   : pageSize/4;   
 
 		// Buffer pre
-		for (int off=0; off<=start; off++) {
-			// Serial.print("Pre  BUFF: ");
-			// Serial.println((int)(flashP+off), HEX);
-			flashP[off] = flashP[off];
+		// This is the area before the writing area.
+		// This for loop is executed once.
+		if (page==startPage)
+		for (int off=0; off<start; off++) {      //off<=start  become    off<start
+			 Serial.print("Pre  BUFF: ");
+			 Serial.println((int)(flashP+off), HEX);
+			flashP[off] = flashP[off];  // copy same data so that other variables are not affected.
 		}
 		// Buffer post
-		for (int off=end; off<pageSize/4; off++) {
-			// Serial.print("Post BUFF: ");
-			// Serial.println((int)(flashP+off), HEX);
+		// This is the area after the writing area;
+		// this for loop is executed once
+		if (page==endPage)
+		for (int off=end; off<pageSize/4; off++) {       
+			 Serial.print("Post BUFF: ");
+			 Serial.println((int)(flashP+off), HEX);
 			flashP[off] = flashP[off];
 		}
 		// Copy data over
-		for (int off=start; off<=end; off++, dataP++) {
-			// Serial.print("Data     : ");
-			// Serial.print((int)(flashP+off), HEX);
-			// Serial.print(" ");
-			// Serial.println(*dataP, HEX);
+		// This is data we want to copy.
+		for (int off=start; off<end; off++, dataP++) {     // the off<=end  become off <end
+			 Serial.print("Data     : ");
+			 Serial.print((int)(flashP+off), HEX);
+			 Serial.print(" ");
+			 Serial.println(*dataP, HEX);
 			flashP[off] = *dataP;
 		}
 

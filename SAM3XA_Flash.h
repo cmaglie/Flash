@@ -19,8 +19,15 @@
 
 #include <SAM3X8E_EEFC.h>
 
+
+
 #ifndef SAM3XA_FLASH_INCLUDED
 #define SAM3XA_FLASH_INCLUDED
+
+
+
+
+
 
 class SAM3XA_Flash {
 public:
